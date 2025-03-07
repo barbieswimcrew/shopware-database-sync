@@ -1,0 +1,33 @@
+{
+	"name": "attic-concepts/database-sync",
+	"type": "shopware-platform-plugin",
+	"description": "Database sync plugin for Shopware 6",
+	"authors": [
+		{
+			"name": "Martin Schindler",
+			"email": "info@attic-concepts.com"
+		}
+	],
+	"keywords": [
+		"shopware",
+		"database",
+		"sync"
+	],
+	"license": "MIT",
+	"require": {
+		"php": ">=8.1",
+		"shopware/core": "6.6.*"
+	},
+	"autoload": {
+		"psr-4": {
+			"AtticConcepts\\DatabaseSync\\": "src/"
+		}
+	},
+	"extra": {
+		"shopware-plugin-class": "AtticConcepts\\DatabaseSync\\AtticConceptsDatabaseSync",
+		"label": {
+			"de-DE": "Datenbank Synchronisation",
+			"en-GB": "Database Synchronization"
+		}
+	}
+}
