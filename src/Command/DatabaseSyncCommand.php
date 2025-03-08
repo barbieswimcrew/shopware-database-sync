@@ -57,64 +57,64 @@ HELP
 
         $connectionName = $input->getArgument('connection');
         if (!$connectionName) {
-            $this->io->title('Datenbank Synchronisation');
+            $this->io->title('Database Synchronization');
             $this->io->text([
-                'Dieser Befehl wird Ihre lokale Datenbank mit einer Remote-Instanz synchronisieren.',
-                'Bitte wählen Sie die gewünschte Verbindung:',
+                'This command will synchronize your local database with a remote instance.',
+                'Please choose the desired connection:',
                 '',
-                '- production: Für die Synchronisation mit der Live-Umgebung',
-                '- staging: Für die Synchronisation mit der Test-Umgebung',
+                '- production: For synchronization with the live environment',
+                '- staging: For synchronization with the test environment',
             ]);
 
             $connectionName = $this->io->choice(
-                'Verbindung',
+                'Connection',
                 $allowedConnections,
                 'production'
             );
         } elseif (!in_array($connectionName, $allowedConnections, true)) {
             $this->io->error(sprintf(
-                'Ungültige Verbindung "%s". Erlaubte Werte sind: "%s"',
+                'Invalid connection "%s". Allowed values are: "%s"',
                 $connectionName,
-                implode('" oder "', $allowedConnections)
+                implode('" or "', $allowedConnections)
             ));
             return Command::FAILURE;
         }
 
-        $this->io->text(sprintf('Gewählte Verbindung: <info>%s</info>', $connectionName));
+        $this->io->text(sprintf('Selected connection: <info>%s</info>', $connectionName));
 
-        // Lade die Verbindungsparameter
+        // Load connection parameters
         $options = $this->config->getConnection($connectionName);
 
-        $this->io->section('Verbindungsdetails');
+        $this->io->section('Connection Details');
         $this->io->table(
-            ['Parameter', 'Wert'],
+            ['Parameter', 'Value'],
             [
-                ['Host', $options['host'] ?? 'Nicht konfiguriert'],
-                ['User', $options['user'] ?? 'Nicht konfiguriert'],
-                ['Port', $options['port'] ?? 'Nicht konfiguriert'],
-                ['Remote Path', $options['remote_path'] ?? 'Nicht konfiguriert'],
-                ['SSH Key', $options['key'] ?? 'Nicht konfiguriert'],
-                ['Password', isset($options['password']) && $options['password'] ? 'Konfiguriert' : 'Nicht konfiguriert'],
+                ['Host', $options['host'] ?? 'Not configured'],
+                ['User', $options['user'] ?? 'Not configured'],
+                ['Port', $options['port'] ?? 'Not configured'],
+                ['Remote Path', $options['remote_path'] ?? 'Not configured'],
+                ['SSH Key', $options['key'] ?? 'Not configured'],
+                ['Password', isset($options['password']) && $options['password'] ? 'Configured' : 'Not configured'],
             ]
         );
 
-        // Validiere die Verbindungsparameter
+        // Validate connection parameters
         $missingOptions = $this->validateOptions($options);
         if (!empty($missingOptions)) {
             $this->io->error([
-                'Fehlende Konfigurationsparameter:',
+                'Missing configuration parameters:',
                 ...$missingOptions
             ]);
             return Command::FAILURE;
         }
 
-        // Erstelle temporäre Datei für den Dump
+        // Create temporary file for dump
         $tempFile = sys_get_temp_dir() . '/shopware_' . uniqid() . '.sql';
-        $this->io->text(sprintf('Temporäre Dump-Datei: <info>%s</info>', $tempFile));
+        $this->io->text(sprintf('Temporary dump file: <info>%s</info>', $tempFile));
 
         try {
-            // Erstelle SSH Verbindung und führe Dump durch
-            $this->io->section('Erstelle Datenbank-Dump auf dem Remote-Server');
+            // Create SSH connection and execute dump
+            $this->io->section('Creating Database Dump on Remote Server');
 
             $sshCommand = sprintf(
                 'ssh -p %d %s@%s',
@@ -127,7 +127,7 @@ HELP
                 $sshCommand .= sprintf(' -i %s', $options['key']);
             }
 
-            // Erstelle den Dump-Befehl
+            // Create dump command
             $dumpCommand = sprintf(
                 '%s "cd %s && ddev exec bin/console database:dump --path-only"',
                 $sshCommand,
@@ -140,16 +140,16 @@ HELP
 
             if (!$process->isSuccessful()) {
                 throw new \RuntimeException(sprintf(
-                    'Fehler beim Erstellen des Dumps: %s',
+                    'Error creating dump: %s',
                     $process->getErrorOutput()
                 ));
             }
 
             $remoteDumpPath = trim($process->getOutput());
-            $this->io->text(sprintf('Remote Dump-Datei: <info>%s</info>', $remoteDumpPath));
+            $this->io->text(sprintf('Remote dump file: <info>%s</info>', $remoteDumpPath));
 
-            // Kopiere den Dump lokal
-            $this->io->section('Kopiere Dump-Datei lokal');
+            // Copy dump locally
+            $this->io->section('Copying Dump File Locally');
             $scpCommand = sprintf(
                 'scp -P %d %s%s@%s:%s %s',
                 $options['port'],
@@ -166,13 +166,13 @@ HELP
 
             if (!$process->isSuccessful()) {
                 throw new \RuntimeException(sprintf(
-                    'Fehler beim Kopieren des Dumps: %s',
+                    'Error copying dump: %s',
                     $process->getErrorOutput()
                 ));
             }
 
-            // Importiere den Dump
-            $this->io->section('Importiere Dump in lokale Datenbank');
+            // Import dump
+            $this->io->section('Importing Dump into Local Database');
             $importCommand = sprintf('ddev exec bin/console database:import %s', $tempFile);
 
             $process = Process::fromShellCommandline($importCommand);
@@ -181,20 +181,20 @@ HELP
 
             if (!$process->isSuccessful()) {
                 throw new \RuntimeException(sprintf(
-                    'Fehler beim Importieren des Dumps: %s',
+                    'Error importing dump: %s',
                     $process->getErrorOutput()
                 ));
             }
 
-            // Lösche temporäre Dateien
-            $this->io->section('Räume auf');
+            // Delete temporary files
+            $this->io->section('Cleanup');
 
-            // Lösche lokale Dump-Datei
+            // Delete local dump file
             if (file_exists($tempFile)) {
                 unlink($tempFile);
             }
 
-            // Lösche Remote Dump-Datei
+            // Delete remote dump file
             $deleteCommand = sprintf(
                 '%s "rm %s"',
                 $sshCommand,
@@ -204,7 +204,7 @@ HELP
             $process = Process::fromShellCommandline($deleteCommand);
             $process->run();
 
-            $this->io->success('Datenbank wurde erfolgreich synchronisiert!');
+            $this->io->success('Database successfully synchronized!');
             return Command::SUCCESS;
 
         } catch (\Exception $e) {
