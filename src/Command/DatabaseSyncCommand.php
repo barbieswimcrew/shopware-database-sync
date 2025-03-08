@@ -98,7 +98,123 @@ HELP
             ]
         );
 
-        return Command::SUCCESS;
+        // Validiere die Verbindungsparameter
+        $missingOptions = $this->validateOptions($options);
+        if (!empty($missingOptions)) {
+            $this->io->error([
+                'Fehlende Konfigurationsparameter:',
+                ...$missingOptions
+            ]);
+            return Command::FAILURE;
+        }
+
+        // Erstelle temporäre Datei für den Dump
+        $tempFile = sys_get_temp_dir() . '/shopware_' . uniqid() . '.sql';
+        $this->io->text(sprintf('Temporäre Dump-Datei: <info>%s</info>', $tempFile));
+
+        try {
+            // Erstelle SSH Verbindung und führe Dump durch
+            $this->io->section('Erstelle Datenbank-Dump auf dem Remote-Server');
+
+            $sshCommand = sprintf(
+                'ssh -p %d %s@%s',
+                $options['port'],
+                $options['user'],
+                $options['host']
+            );
+
+            if (isset($options['key'])) {
+                $sshCommand .= sprintf(' -i %s', $options['key']);
+            }
+
+            // Erstelle den Dump-Befehl
+            $dumpCommand = sprintf(
+                '%s "cd %s && ddev exec bin/console database:dump --path-only"',
+                $sshCommand,
+                $options['remote_path']
+            );
+
+            $process = Process::fromShellCommandline($dumpCommand);
+            $process->setTimeout(3600);
+            $process->run();
+
+            if (!$process->isSuccessful()) {
+                throw new \RuntimeException(sprintf(
+                    'Fehler beim Erstellen des Dumps: %s',
+                    $process->getErrorOutput()
+                ));
+            }
+
+            $remoteDumpPath = trim($process->getOutput());
+            $this->io->text(sprintf('Remote Dump-Datei: <info>%s</info>', $remoteDumpPath));
+
+            // Kopiere den Dump lokal
+            $this->io->section('Kopiere Dump-Datei lokal');
+            $scpCommand = sprintf(
+                'scp -P %d %s%s@%s:%s %s',
+                $options['port'],
+                isset($options['key']) ? sprintf('-i %s ', $options['key']) : '',
+                $options['user'],
+                $options['host'],
+                $remoteDumpPath,
+                $tempFile
+            );
+
+            $process = Process::fromShellCommandline($scpCommand);
+            $process->setTimeout(3600);
+            $process->run();
+
+            if (!$process->isSuccessful()) {
+                throw new \RuntimeException(sprintf(
+                    'Fehler beim Kopieren des Dumps: %s',
+                    $process->getErrorOutput()
+                ));
+            }
+
+            // Importiere den Dump
+            $this->io->section('Importiere Dump in lokale Datenbank');
+            $importCommand = sprintf('ddev exec bin/console database:import %s', $tempFile);
+
+            $process = Process::fromShellCommandline($importCommand);
+            $process->setTimeout(3600);
+            $process->run();
+
+            if (!$process->isSuccessful()) {
+                throw new \RuntimeException(sprintf(
+                    'Fehler beim Importieren des Dumps: %s',
+                    $process->getErrorOutput()
+                ));
+            }
+
+            // Lösche temporäre Dateien
+            $this->io->section('Räume auf');
+
+            // Lösche lokale Dump-Datei
+            if (file_exists($tempFile)) {
+                unlink($tempFile);
+            }
+
+            // Lösche Remote Dump-Datei
+            $deleteCommand = sprintf(
+                '%s "rm %s"',
+                $sshCommand,
+                $remoteDumpPath
+            );
+
+            $process = Process::fromShellCommandline($deleteCommand);
+            $process->run();
+
+            $this->io->success('Datenbank wurde erfolgreich synchronisiert!');
+            return Command::SUCCESS;
+
+        } catch (\Exception $e) {
+            if (file_exists($tempFile)) {
+                unlink($tempFile);
+            }
+
+            $this->io->error($e->getMessage());
+            return Command::FAILURE;
+        }
     }
 
     private function validateOptions(array $options): array

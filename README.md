@@ -1,109 +1,123 @@
-# Database Sync Plugin for Shopware 6
+# Shopware Database Sync Plugin
 
-This plugin allows you to synchronize databases between different Shopware 6 instances via SSH.
+Dieses Plugin ermöglicht die Synchronisation einer Datenbank von einer Remote-Shopware-Instanz via SSH.
 
 ## Features
 
--   Sync database from remote Shopware instance to local instance
--   Support for SSH key and password authentication
--   Configurable SSH port and remote path
--   Interactive connection selection with validation
--   Progress feedback during sync process
--   Environment-based configuration (Production/Staging)
+-   Unterstützung für SSH-Key und Passwort-Authentifizierung
+-   Konfigurierbarer SSH-Port und Remote-Pfad
+-   Interaktive Verbindungsauswahl mit Validierung
+-   Automatische Bereinigung temporärer Dateien
+-   Unterstützung für Production und Staging Umgebungen
 
 ## Installation
 
-1. Clone the repository into your Shopware 6 `custom/plugins` directory:
+1. Klone das Repository in das `custom/plugins` Verzeichnis:
 
 ```bash
 cd custom/plugins
-git clone https://github.com/attic-concepts/database-sync.git AtticConceptsDatabaseSync
+git clone https://github.com/barbieswimcrew/shopware-database-sync.git AtticConceptsDatabaseSync
 ```
 
-2. Install the plugin via command line:
+2. Installiere das Plugin über die Shopware CLI:
 
 ```bash
 bin/console plugin:refresh
 bin/console plugin:install --activate AtticConceptsDatabaseSync
-bin/console cache:clear
 ```
 
-## Configuration
+## Konfiguration
 
-The configuration is managed through environment variables in your `.env.local` file. You can configure multiple connections (e.g., Production, Staging).
+Die Konfiguration erfolgt über die `.env.local` Datei. Es werden zwei Verbindungen unterstützt:
 
-### Production Environment
+### Production
 
 ```bash
-# SSH Host
-DATABASE_SYNC_PROD_HOST=production.example.com
-
-# SSH User
-DATABASE_SYNC_PROD_USER=shopware
-
-# SSH Port (default: 22)
+# Production Verbindung
+DATABASE_SYNC_PROD_HOST=example.com
+DATABASE_SYNC_PROD_USER=ssh-user
 DATABASE_SYNC_PROD_PORT=22
-
-# Path to Shopware installation on remote server
-DATABASE_SYNC_PROD_PATH=/var/www/html
-
-# Path to SSH key (optional if using password authentication)
-DATABASE_SYNC_PROD_KEY=%kernel.project_dir%/.ssh/id_rsa
+DATABASE_SYNC_PROD_PATH=/var/www/shopware
+DATABASE_SYNC_PROD_KEY=/path/to/ssh/key
 ```
 
-### Staging Environment
+### Staging
 
 ```bash
-# SSH Host
+# Staging Verbindung
 DATABASE_SYNC_STAGING_HOST=staging.example.com
-
-# SSH User
-DATABASE_SYNC_STAGING_USER=shopware
-
-# SSH Port
+DATABASE_SYNC_STAGING_USER=ssh-user
 DATABASE_SYNC_STAGING_PORT=22
-
-# Path to Shopware installation on remote server
-DATABASE_SYNC_STAGING_PATH=/var/www/staging
-
-# SSH Password (optional if using key authentication)
-DATABASE_SYNC_STAGING_PASSWORD=secret
+DATABASE_SYNC_STAGING_PATH=/var/www/shopware
+DATABASE_SYNC_STAGING_PASSWORD=ssh-password
 ```
 
-## Usage
+## Verwendung
 
-The command can be executed in two ways:
-
-1. Interactive mode (recommended):
+### Datenbank synchronisieren
 
 ```bash
+# Interaktive Auswahl der Verbindung
 bin/console database:sync
-```
 
-2. Direct connection specification:
-
-```bash
+# Direkte Angabe der Verbindung
 bin/console database:sync production
-# or
 bin/console database:sync staging
 ```
 
-Note: Only "production" and "staging" are valid connection names. Any other value will result in an error.
+Der Befehl führt folgende Schritte aus:
 
-The command will:
+1. Validierung der Verbindungsparameter
+2. Erstellung eines Dumps auf dem Remote-Server
+3. Download des Dumps
+4. Import in die lokale Datenbank
+5. Automatische Bereinigung temporärer Dateien
 
-1. Validate the connection name (must be either "production" or "staging")
-2. Establish an SSH connection to the remote server
-3. Create a database dump on the remote server
-4. Import the dump into your local database
+### Datenbank-Dump erstellen
 
-## Security Considerations
+```bash
+# Dump erstellen und Pfad ausgeben
+bin/console database:dump --path-only
 
--   Never store sensitive data (passwords, SSH keys) in code
--   Prefer SSH key authentication over password authentication
--   Ensure `.env.local` file is not tracked in Git repository
--   Restrict SSH access to necessary directories only
--   Use a dedicated SSH user with limited permissions
+# Dump erstellen mit Statusmeldungen
+bin/console database:dump
+```
+
+## Fehlerbehebung
+
+### Ungültige Verbindung
+
+Wenn eine ungültige Verbindung angegeben wird (z.B. "test"), wird eine Fehlermeldung mit den erlaubten Werten angezeigt:
+
+```
+Ungültige Verbindung "test". Erlaubte Werte sind: "production" oder "staging"
+```
+
+### Fehlende Konfiguration
+
+Fehlende Konfigurationsparameter werden klar angezeigt:
+
+```
+Fehlende Konfigurationsparameter:
+DATABASE_SYNC_*_HOST
+DATABASE_SYNC_*_USER
+...
+```
+
+### SSH Verbindungsprobleme
+
+Bei SSH Verbindungsproblemen:
+
+1. Prüfen Sie die Verbindungsparameter (Host, User, Port)
+2. Stellen Sie sicher, dass der SSH-Key oder das Passwort korrekt ist
+3. Testen Sie die SSH-Verbindung manuell: `ssh -p PORT USER@HOST`
+
+## Sicherheit
+
+-   SSH-Keys werden gegenüber Passwörtern bevorzugt
+-   Temporäre Dateien werden automatisch gelöscht
+-   Sensitive Informationen werden nicht geloggt
+-   Verbindungsparameter werden validiert
 
 ## Requirements
 
@@ -112,33 +126,6 @@ The command will:
 -   SSH access to the remote server
 -   Remote server must have Shopware 6 installed with `system:dump` command available
 -   Local Shopware instance must support `system:restore` command
-
-## Troubleshooting
-
-### Invalid Connection Name
-
-If you see an error like "Invalid connection 'xyz'. Allowed values are: 'production' or 'staging'", make sure to use one of the allowed connection names:
-
--   `production` for synchronizing with the live environment
--   `staging` for synchronizing with the test environment
-
-### No Connections Configured
-
-Verify that the required environment variables are correctly set in your `.env.local` file.
-
-### SSH Connection Failed
-
--   Check if SSH key/password is correct
--   Ensure user has access to the remote system
--   Verify configured port is correct
--   Check SSH key permissions (should be 600)
-
-### Database Dump Failed
-
--   Verify remote path is correct
--   Ensure user has necessary permissions
--   Check available disk space
--   Verify Shopware console commands are accessible
 
 ## Support
 
