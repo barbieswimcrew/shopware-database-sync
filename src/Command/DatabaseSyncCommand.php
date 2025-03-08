@@ -53,6 +53,7 @@ HELP
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->io = new SymfonyStyle($input, $output);
+        $allowedConnections = ['production', 'staging'];
 
         $connectionName = $input->getArgument('connection');
         if (!$connectionName) {
@@ -67,9 +68,16 @@ HELP
 
             $connectionName = $this->io->choice(
                 'Verbindung',
-                ['production', 'staging'],
+                $allowedConnections,
                 'production'
             );
+        } elseif (!in_array($connectionName, $allowedConnections, true)) {
+            $this->io->error(sprintf(
+                'Ungültige Verbindung "%s". Erlaubte Werte sind: "%s"',
+                $connectionName,
+                implode('" oder "', $allowedConnections)
+            ));
+            return Command::FAILURE;
         }
 
         $this->io->text(sprintf('Gewählte Verbindung: <info>%s</info>', $connectionName));
