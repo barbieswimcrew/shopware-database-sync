@@ -54,174 +54,26 @@ HELP
     {
         $this->io = new SymfonyStyle($input, $output);
 
-        $connections = $this->config->getConnections();
-        if (empty($connections)) {
-            $this->io->error([
-                'No database connections configured.',
-                '',
-                'You can configure either a production or staging connection (or both) in your .env.local file:',
-                '',
-                '# Option 1: Production Connection',
-                'DATABASE_SYNC_PROD_HOST=production.example.com',
-                'DATABASE_SYNC_PROD_USER=shopware',
-                'DATABASE_SYNC_PROD_PORT=22',
-                'DATABASE_SYNC_PROD_PATH=/var/www/html',
-                'DATABASE_SYNC_PROD_KEY=%kernel.project_dir%/.ssh/id_rsa',
-                '',
-                '# Option 2: Staging Connection',
-                'DATABASE_SYNC_STAGING_HOST=staging.example.com',
-                'DATABASE_SYNC_STAGING_USER=shopware',
-                'DATABASE_SYNC_STAGING_PORT=22',
-                'DATABASE_SYNC_STAGING_PATH=/var/www/staging',
-                'DATABASE_SYNC_STAGING_PASSWORD=your-ssh-password',
-                '',
-                'After configuration, you can use:',
-                '  bin/console database:sync production',
-                '  bin/console database:sync staging',
-                '',
-                'See the README.md file for more configuration examples and documentation.'
-            ]);
-            return Command::FAILURE;
-        }
-
-        // Get connection name
         $connectionName = $input->getArgument('connection');
         if (!$connectionName) {
-            $this->io->title('Database Sync');
+            $this->io->title('Datenbank Synchronisation');
             $this->io->text([
-                'This command will synchronize your local database with a remote Shopware instance.',
-                'Please select which connection you want to use:',
-                ''
+                'Dieser Befehl wird Ihre lokale Datenbank mit einer Remote-Instanz synchronisieren.',
+                'Bitte wählen Sie die gewünschte Verbindung:',
+                '',
+                '- production: Für die Synchronisation mit der Live-Umgebung',
+                '- staging: Für die Synchronisation mit der Test-Umgebung',
             ]);
 
             $connectionName = $this->io->choice(
-                'Connection',
-                array_keys($connections),
-                array_key_first($connections)
+                'Verbindung',
+                ['production', 'staging'],
+                'production'
             );
         }
 
-        $options = $this->config->getConnection($connectionName);
-        if (!$options) {
-            $this->io->error([
-                sprintf('Connection "%s" not found.', $connectionName),
-                '',
-                'Available connections must be configured in your .env.local file.',
-                sprintf('For a %s connection, use:', $connectionName),
-                '',
-                sprintf('DATABASE_SYNC_%s_HOST=your-server.com', strtoupper($connectionName)),
-                sprintf('DATABASE_SYNC_%s_USER=shopware', strtoupper($connectionName)),
-                sprintf('DATABASE_SYNC_%s_PORT=22', strtoupper($connectionName)),
-                sprintf('DATABASE_SYNC_%s_PATH=/var/www/html', strtoupper($connectionName)),
-                sprintf('DATABASE_SYNC_%s_KEY=%%kernel.project_dir%%/.ssh/id_rsa', strtoupper($connectionName)),
-                '# or',
-                sprintf('DATABASE_SYNC_%s_PASSWORD=your-password', strtoupper($connectionName))
-            ]);
-            return Command::FAILURE;
-        }
+        $this->io->text(sprintf('Gewählte Verbindung: <info>%s</info>', $connectionName));
 
-        // Validate required options
-        $missingOptions = $this->validateOptions($options);
-        if (!empty($missingOptions)) {
-            $this->io->error([
-                sprintf('Missing required configuration for connection "%s":', $connectionName),
-                'Please check the following environment variables:',
-                ...$missingOptions,
-                '',
-                'Make sure all required variables are set in your .env.local file.'
-            ]);
-            return Command::FAILURE;
-        }
-
-        $this->io->title('Database Sync Configuration');
-        $this->io->warning([
-            'This command will:',
-            sprintf('1. Connect to %s via SSH', $options['host']),
-            sprintf('2. Create a database dump on %s', $options['host']),
-            '3. Import the dump into your local database',
-            '',
-            'Your local database will be overwritten!'
-        ]);
-
-        // Show configuration summary
-        $this->showConfigurationSummary($connectionName, $options);
-
-        // Ask for confirmation
-        if (!$this->io->confirm('Do you want to proceed with the database sync?', false)) {
-            $this->io->warning('Operation cancelled by user.');
-            return Command::SUCCESS;
-        }
-
-        $this->io->section('Starting Database Sync');
-
-        // Create SSH command
-        $sshCommand = sprintf(
-            'ssh -p %s %s@%s',
-            $options['port'],
-            $options['user'],
-            $options['host']
-        );
-
-        if (isset($options['key']) && $options['key']) {
-            $sshCommand .= sprintf(' -i %s', $options['key']);
-        }
-
-        // Create remote dump command
-        $remoteCommand = sprintf(
-            'cd %s && bin/console system:dump',
-            $options['remote_path']
-        );
-
-        // Create local import command
-        $localCommand = 'bin/console system:restore';
-
-        // Combine commands
-        $command = sprintf('%s "%s" | %s', $sshCommand, $remoteCommand, $localCommand);
-
-        $this->io->text([
-            'Executing sync command...',
-            sprintf('• Remote server: %s', $options['host']),
-            sprintf('• Remote path: %s', $options['remote_path']),
-            sprintf('• Authentication: %s', isset($options['password']) ? 'Password' : 'SSH Key'),
-            ''
-        ]);
-
-        $process = Process::fromShellCommandline($command);
-        $process->setTimeout(3600); // 1 hour timeout
-
-        if (isset($options['password']) && $options['password']) {
-            $process->setInput($options['password']);
-        }
-
-        $process->run(function ($type, $buffer) {
-            if (Process::ERR === $type) {
-                $this->io->error($buffer);
-            } else {
-                $this->io->text($buffer);
-            }
-        });
-
-        if (!$process->isSuccessful()) {
-            $this->io->error([
-                'Database sync failed!',
-                '',
-                'Common issues:',
-                '• SSH connection failed (check host, port, and authentication)',
-                '• Remote path is incorrect',
-                '• Missing permissions on remote server',
-                '• Insufficient disk space',
-                '',
-                'Check the error message above for more details.'
-            ]);
-            return Command::FAILURE;
-        }
-
-        $this->io->success([
-            'Database sync completed successfully!',
-            '',
-            'Your local database has been updated with the data from:',
-            sprintf('• %s (%s)', $options['host'], $connectionName)
-        ]);
         return Command::SUCCESS;
     }
 
