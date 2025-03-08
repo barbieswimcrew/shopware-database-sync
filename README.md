@@ -1,39 +1,39 @@
 # Shopware Database Sync Plugin
 
-Dieses Plugin ermöglicht die Synchronisation einer Datenbank von einer Remote-Shopware-Instanz via SSH.
+This plugin enables database synchronization from a remote Shopware instance via SSH.
 
 ## Features
 
--   Unterstützung für SSH-Key und Passwort-Authentifizierung
--   Konfigurierbarer SSH-Port und Remote-Pfad
--   Interaktive Verbindungsauswahl mit Validierung
--   Automatische Bereinigung temporärer Dateien
--   Unterstützung für Production und Staging Umgebungen
+-   Support for SSH key and password authentication
+-   Configurable SSH port and remote path
+-   Interactive connection selection with validation
+-   Automatic cleanup of temporary files
+-   Support for production and staging environments
 
 ## Installation
 
-1. Klone das Repository in das `custom/plugins` Verzeichnis:
+1. Clone the repository into your `custom/plugins` directory:
 
 ```bash
 cd custom/plugins
 git clone https://github.com/barbieswimcrew/shopware-database-sync.git AtticConceptsDatabaseSync
 ```
 
-2. Installiere das Plugin über die Shopware CLI:
+2. Install the plugin via Shopware CLI:
 
 ```bash
 bin/console plugin:refresh
 bin/console plugin:install --activate AtticConceptsDatabaseSync
 ```
 
-## Konfiguration
+## Configuration
 
-Die Konfiguration erfolgt über die `.env.local` Datei. Es werden zwei Verbindungen unterstützt:
+Configuration is managed through the `.env.local` file. Two connections are supported:
 
 ### Production
 
 ```bash
-# Production Verbindung
+# Production connection
 DATABASE_SYNC_PROD_HOST=example.com
 DATABASE_SYNC_PROD_USER=ssh-user
 DATABASE_SYNC_PROD_PORT=22
@@ -44,7 +44,7 @@ DATABASE_SYNC_PROD_KEY=/path/to/ssh/key
 ### Staging
 
 ```bash
-# Staging Verbindung
+# Staging connection
 DATABASE_SYNC_STAGING_HOST=staging.example.com
 DATABASE_SYNC_STAGING_USER=ssh-user
 DATABASE_SYNC_STAGING_PORT=22
@@ -52,72 +52,72 @@ DATABASE_SYNC_STAGING_PATH=/var/www/shopware
 DATABASE_SYNC_STAGING_PASSWORD=ssh-password
 ```
 
-## Verwendung
+## Usage
 
-### Datenbank synchronisieren
+### Synchronize Database
 
 ```bash
-# Interaktive Auswahl der Verbindung
+# Interactive connection selection
 bin/console database:sync
 
-# Direkte Angabe der Verbindung
+# Direct connection specification
 bin/console database:sync production
 bin/console database:sync staging
 ```
 
-Der Befehl führt folgende Schritte aus:
+The command performs the following steps:
 
-1. Validierung der Verbindungsparameter
-2. Erstellung eines Dumps auf dem Remote-Server
-3. Download des Dumps
-4. Import in die lokale Datenbank
-5. Automatische Bereinigung temporärer Dateien
+1. Validates connection parameters
+2. Creates a dump on the remote server
+3. Downloads the dump
+4. Imports into local database
+5. Automatically cleans up temporary files
 
-### Datenbank-Dump erstellen
+### Create Database Dump
 
 ```bash
-# Dump erstellen und Pfad ausgeben
+# Create dump and output path
 bin/console database:dump --path-only
 
-# Dump erstellen mit Statusmeldungen
+# Create dump with status messages
 bin/console database:dump
 ```
 
-## Fehlerbehebung
+## Troubleshooting
 
-### Ungültige Verbindung
+### Invalid Connection
 
-Wenn eine ungültige Verbindung angegeben wird (z.B. "test"), wird eine Fehlermeldung mit den erlaubten Werten angezeigt:
-
-```
-Ungültige Verbindung "test". Erlaubte Werte sind: "production" oder "staging"
-```
-
-### Fehlende Konfiguration
-
-Fehlende Konfigurationsparameter werden klar angezeigt:
+When an invalid connection is specified (e.g., "test"), an error message displays the allowed values:
 
 ```
-Fehlende Konfigurationsparameter:
+Invalid connection "test". Allowed values are: "production" or "staging"
+```
+
+### Missing Configuration
+
+Missing configuration parameters are clearly displayed:
+
+```
+Missing configuration parameters:
 DATABASE_SYNC_*_HOST
 DATABASE_SYNC_*_USER
 ...
 ```
 
-### SSH Verbindungsprobleme
+### SSH Connection Issues
 
-Bei SSH Verbindungsproblemen:
+For SSH connection problems:
 
-1. Prüfen Sie die Verbindungsparameter (Host, User, Port)
-2. Stellen Sie sicher, dass der SSH-Key oder das Passwort korrekt ist
-3. Testen Sie die SSH-Verbindung manuell: `ssh -p PORT USER@HOST`
+1. Check connection parameters (host, user, port)
+2. Ensure SSH key or password is correct
+3. Test SSH connection manually: `ssh -p PORT USER@HOST`
 
-## Sicherheit
+## Security
 
--   SSH-Keys werden gegenüber Passwörtern bevorzugt
--   Temporäre Dateien werden automatisch gelöscht
--   Sensitive Informationen werden nicht geloggt
--   Verbindungsparameter werden validiert
+-   SSH keys are preferred over passwords
+-   Temporary files are automatically deleted
+-   Sensitive information is not logged
+-   Connection parameters are validated
 
 ## Requirements
 
