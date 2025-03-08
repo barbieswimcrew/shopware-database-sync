@@ -16,44 +16,28 @@ class DatabaseSyncConfig
     private function loadConfig(): void
     {
         // Production configuration
-        if ($this->hasProductionConfig()) {
-            $this->config['production'] = [
-                'host' => $this->parameterBag->get('env(DATABASE_SYNC_PROD_HOST)'),
-                'user' => $this->parameterBag->get('env(DATABASE_SYNC_PROD_USER)'),
-                'port' => (int) $this->parameterBag->get('env(DATABASE_SYNC_PROD_PORT)'),
-                'remote_path' => $this->parameterBag->get('env(DATABASE_SYNC_PROD_PATH)'),
-                'key' => $this->parameterBag->get('env(DATABASE_SYNC_PROD_KEY)'),
-            ];
-        }
+        $this->config['production'] = [
+            'host' => $this->getEnvOrNull('DATABASE_SYNC_PROD_HOST'),
+            'user' => $this->getEnvOrNull('DATABASE_SYNC_PROD_USER'),
+            'port' => (int) ($this->getEnvOrNull('DATABASE_SYNC_PROD_PORT') ?? 22),
+            'remote_path' => $this->getEnvOrNull('DATABASE_SYNC_PROD_PATH'),
+            'key' => $this->getEnvOrNull('DATABASE_SYNC_PROD_KEY'),
+        ];
 
         // Staging configuration
-        if ($this->hasStagingConfig()) {
-            $this->config['staging'] = [
-                'host' => $this->parameterBag->get('env(DATABASE_SYNC_STAGING_HOST)'),
-                'user' => $this->parameterBag->get('env(DATABASE_SYNC_STAGING_USER)'),
-                'port' => (int) $this->parameterBag->get('env(DATABASE_SYNC_STAGING_PORT)'),
-                'remote_path' => $this->parameterBag->get('env(DATABASE_SYNC_STAGING_PATH)'),
-                'password' => $this->parameterBag->get('env(DATABASE_SYNC_STAGING_PASSWORD)'),
-            ];
-        }
+        $this->config['staging'] = [
+            'host' => $this->getEnvOrNull('DATABASE_SYNC_STAGING_HOST'),
+            'user' => $this->getEnvOrNull('DATABASE_SYNC_STAGING_USER'),
+            'port' => (int) ($this->getEnvOrNull('DATABASE_SYNC_STAGING_PORT') ?? 22),
+            'remote_path' => $this->getEnvOrNull('DATABASE_SYNC_STAGING_PATH'),
+            'password' => $this->getEnvOrNull('DATABASE_SYNC_STAGING_PASSWORD'),
+        ];
     }
 
-    private function hasProductionConfig(): bool
+    private function getEnvOrNull(string $name): ?string
     {
-        return $this->parameterBag->has('env(DATABASE_SYNC_PROD_HOST)')
-            && $this->parameterBag->has('env(DATABASE_SYNC_PROD_USER)')
-            && $this->parameterBag->has('env(DATABASE_SYNC_PROD_PORT)')
-            && $this->parameterBag->has('env(DATABASE_SYNC_PROD_PATH)')
-            && $this->parameterBag->has('env(DATABASE_SYNC_PROD_KEY)');
-    }
-
-    private function hasStagingConfig(): bool
-    {
-        return $this->parameterBag->has('env(DATABASE_SYNC_STAGING_HOST)')
-            && $this->parameterBag->has('env(DATABASE_SYNC_STAGING_USER)')
-            && $this->parameterBag->has('env(DATABASE_SYNC_STAGING_PORT)')
-            && $this->parameterBag->has('env(DATABASE_SYNC_STAGING_PATH)')
-            && $this->parameterBag->has('env(DATABASE_SYNC_STAGING_PASSWORD)');
+        $envName = 'env(' . $name . ')';
+        return $this->parameterBag->has($envName) ? $this->parameterBag->get($envName) : null;
     }
 
     public function getConnections(): array

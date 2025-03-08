@@ -82,6 +82,22 @@ HELP
 
         $this->io->text(sprintf('Gewählte Verbindung: <info>%s</info>', $connectionName));
 
+        // Lade die Verbindungsparameter
+        $options = $this->config->getConnection($connectionName);
+
+        $this->io->section('Verbindungsdetails');
+        $this->io->table(
+            ['Parameter', 'Wert'],
+            [
+                ['Host', $options['host'] ?? 'Nicht konfiguriert'],
+                ['User', $options['user'] ?? 'Nicht konfiguriert'],
+                ['Port', $options['port'] ?? 'Nicht konfiguriert'],
+                ['Remote Path', $options['remote_path'] ?? 'Nicht konfiguriert'],
+                ['SSH Key', $options['key'] ?? 'Nicht konfiguriert'],
+                ['Password', isset($options['password']) && $options['password'] ? 'Konfiguriert' : 'Nicht konfiguriert'],
+            ]
+        );
+
         return Command::SUCCESS;
     }
 
