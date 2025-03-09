@@ -4,7 +4,7 @@ This plugin enables database synchronization from a remote Shopware instance via
 
 ## Features
 
--   Secure SSH key authentication
+-   Interactive SSH password authentication
 -   Configurable SSH port and remote path
 -   Interactive connection selection with validation
 -   Automatic cleanup of temporary files
@@ -38,7 +38,6 @@ DATABASE_SYNC_PROD_HOST=example.com
 DATABASE_SYNC_PROD_USER=ssh-user
 DATABASE_SYNC_PROD_PORT=22
 DATABASE_SYNC_PROD_PATH=/var/www/shopware
-DATABASE_SYNC_PROD_KEY=/path/to/ssh/key
 ```
 
 ### Staging
@@ -49,7 +48,6 @@ DATABASE_SYNC_STAGING_HOST=staging.example.com
 DATABASE_SYNC_STAGING_USER=ssh-user
 DATABASE_SYNC_STAGING_PORT=22
 DATABASE_SYNC_STAGING_PATH=/var/www/shopware
-DATABASE_SYNC_STAGING_KEY=/path/to/ssh/key
 ```
 
 ## Usage
@@ -68,10 +66,11 @@ bin/console database:sync staging
 The command performs the following steps:
 
 1. Validates connection parameters
-2. Creates a dump on the remote server
-3. Downloads the dump
-4. Imports into local database
-5. Automatically cleans up temporary files
+2. Prompts for SSH password
+3. Creates a dump on the remote server
+4. Downloads the dump
+5. Imports into local database
+6. Automatically cleans up temporary files
 
 ### Create Database Dump
 
@@ -101,7 +100,6 @@ Missing configuration parameters are clearly displayed:
 Missing configuration parameters:
 DATABASE_SYNC_*_HOST
 DATABASE_SYNC_*_USER
-DATABASE_SYNC_*_KEY
 ...
 ```
 
@@ -110,12 +108,12 @@ DATABASE_SYNC_*_KEY
 For SSH connection problems:
 
 1. Check connection parameters (host, user, port)
-2. Ensure SSH key exists and has correct permissions (600)
-3. Test SSH connection manually: `ssh -i /path/to/key -p PORT USER@HOST`
+2. Ensure you have the correct password
+3. Test SSH connection manually: `ssh -p PORT USER@HOST`
 
 ## Security
 
--   SSH key authentication for secure connections
+-   Interactive password authentication
 -   Temporary files are automatically deleted
 -   Sensitive information is not logged
 -   Connection parameters are validated

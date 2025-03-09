@@ -21,7 +21,6 @@ class DatabaseSyncConfig
             'user' => $this->getEnvOrNull('DATABASE_SYNC_PROD_USER'),
             'port' => (int) ($this->getEnvOrNull('DATABASE_SYNC_PROD_PORT') ?? 22),
             'remote_path' => $this->getEnvOrNull('DATABASE_SYNC_PROD_PATH'),
-            'key' => $this->getEnvOrNull('DATABASE_SYNC_PROD_KEY'),
         ];
 
         // Staging configuration
@@ -30,7 +29,6 @@ class DatabaseSyncConfig
             'user' => $this->getEnvOrNull('DATABASE_SYNC_STAGING_USER'),
             'port' => (int) ($this->getEnvOrNull('DATABASE_SYNC_STAGING_PORT') ?? 22),
             'remote_path' => $this->getEnvOrNull('DATABASE_SYNC_STAGING_PATH'),
-            'key' => $this->getEnvOrNull('DATABASE_SYNC_STAGING_KEY'),
         ];
     }
 

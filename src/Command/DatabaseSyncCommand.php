@@ -93,7 +93,6 @@ HELP
                 ['User', $options['user'] ?? 'Not configured'],
                 ['Port', $options['port'] ?? 'Not configured'],
                 ['Remote Path', $options['remote_path'] ?? 'Not configured'],
-                ['SSH Key', $options['key'] ?? 'Not configured'],
             ]
         );
 
@@ -117,10 +116,6 @@ HELP
                 $options['user'],
                 $options['host']
             );
-
-            if (isset($options['key'])) {
-                $sshCommand .= sprintf(' -i %s', $options['key']);
-            }
 
             // Execute pwd command
             $command = sprintf('%s "pwd"', $sshCommand);
@@ -148,7 +143,7 @@ HELP
     private function validateOptions(array $options): array
     {
         $missingOptions = [];
-        $requiredOptions = ['host', 'user', 'port', 'remote_path', 'key'];
+        $requiredOptions = ['host', 'user', 'port', 'remote_path'];
 
         foreach ($requiredOptions as $option) {
             if (!isset($options[$option]) || empty($options[$option])) {
@@ -169,7 +164,6 @@ HELP
                 ['User', $options['user']],
                 ['Port', $options['port']],
                 ['Remote Path', $options['remote_path']],
-                ['SSH Key', $options['key']],
             ]
         );
     }
