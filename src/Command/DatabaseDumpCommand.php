@@ -42,20 +42,20 @@ HELP
         $pathOnly = $input->getOption('path-only');
 
         if (!$pathOnly) {
-            $this->io->title('Creating Database Dump');
+            $this->io->title('Erstelle Datenbank-Dump');
         }
 
         try {
-            // Create dump directory if it doesn't exist
+            // Erstelle Dump-Verzeichnis, falls es nicht existiert
             $dumpDir = getcwd() . '/var/dump';
             if (!is_dir($dumpDir)) {
                 mkdir($dumpDir, 0777, true);
             }
 
-            // Create dump file
+            // Erstelle Dump-Datei
             $dumpFile = sprintf('%s/dump_%s.sql', $dumpDir, date('Y-m-d_H-i-s'));
 
-            // Get database configuration from .env
+            // Hole Datenbank-Konfiguration aus .env
             $dbUrl = $_SERVER['DATABASE_URL'] ?? null;
             if (!$dbUrl) {
                 throw new \RuntimeException('DATABASE_URL is not configured');
@@ -64,10 +64,10 @@ HELP
             // Parse DATABASE_URL
             $dbConfig = parse_url($dbUrl);
             if ($dbConfig === false) {
-                throw new \RuntimeException('Could not parse DATABASE_URL');
+                throw new \RuntimeException('DATABASE_URL konnte nicht geparst werden');
             }
 
-            // Create mysqldump command
+            // Erstelle mysqldump Befehl
             $command = sprintf(
                 'mysqldump -h%s -u%s -p%s %s > %s',
                 $dbConfig['host'],
@@ -77,7 +77,7 @@ HELP
                 $dumpFile
             );
 
-            // Execute mysqldump
+            // Führe mysqldump aus
             $process = Process::fromShellCommandline($command);
             $process->setTimeout(3600);
             $process->run();
@@ -92,7 +92,7 @@ HELP
             if ($pathOnly) {
                 $output->write($dumpFile);
             } else {
-                $this->io->success(sprintf('Database dump created: %s', $dumpFile));
+                $this->io->success(sprintf('Datenbank-Dump wurde erstellt: %s', $dumpFile));
             }
 
             return Command::SUCCESS;

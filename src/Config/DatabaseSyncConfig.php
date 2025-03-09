@@ -36,8 +36,7 @@ class DatabaseSyncConfig
 
     private function getEnvOrNull(string $name): ?string
     {
-        $envName = 'env(' . $name . ')';
-        return $this->parameterBag->has($envName) ? $this->parameterBag->get($envName) : null;
+        return $_ENV[$name] ?? $_SERVER[$name] ?? null;
     }
 
     public function getConnections(): array

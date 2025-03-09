@@ -98,7 +98,7 @@ HELP
             ]
         );
 
-        // Validate connection parameters
+        // Validiere die Verbindungsparameter
         $missingOptions = $this->validateOptions($options);
         if (!empty($missingOptions)) {
             $this->io->error([
@@ -108,13 +108,13 @@ HELP
             return Command::FAILURE;
         }
 
-        // Create temporary file for dump
+        // Erstelle temporäre Datei für den Dump
         $tempFile = sys_get_temp_dir() . '/shopware_' . uniqid() . '.sql';
-        $this->io->text(sprintf('Temporary dump file: <info>%s</info>', $tempFile));
+        $this->io->text(sprintf('Temporäre Dump-Datei: <info>%s</info>', $tempFile));
 
         try {
-            // Create SSH connection and execute dump
-            $this->io->section('Creating Database Dump on Remote Server');
+            // Erstelle SSH Verbindung und führe Dump durch
+            $this->io->section('Erstelle Datenbank-Dump auf dem Remote-Server');
 
             $sshCommand = sprintf(
                 'ssh -p %d %s@%s',
@@ -127,7 +127,7 @@ HELP
                 $sshCommand .= sprintf(' -i %s', $options['key']);
             }
 
-            // Create dump command
+            // Erstelle den Dump-Befehl
             $dumpCommand = sprintf(
                 '%s "cd %s && ddev exec bin/console database:dump --path-only"',
                 $sshCommand,
@@ -146,10 +146,10 @@ HELP
             }
 
             $remoteDumpPath = trim($process->getOutput());
-            $this->io->text(sprintf('Remote dump file: <info>%s</info>', $remoteDumpPath));
+            $this->io->text(sprintf('Remote Dump-Datei: <info>%s</info>', $remoteDumpPath));
 
-            // Copy dump locally
-            $this->io->section('Copying Dump File Locally');
+            // Kopiere den Dump lokal
+            $this->io->section('Kopiere Dump-Datei lokal');
             $scpCommand = sprintf(
                 'scp -P %d %s%s@%s:%s %s',
                 $options['port'],
@@ -171,8 +171,8 @@ HELP
                 ));
             }
 
-            // Import dump
-            $this->io->section('Importing Dump into Local Database');
+            // Importiere den Dump
+            $this->io->section('Importiere Dump in lokale Datenbank');
             $importCommand = sprintf('ddev exec bin/console database:import %s', $tempFile);
 
             $process = Process::fromShellCommandline($importCommand);
@@ -186,15 +186,15 @@ HELP
                 ));
             }
 
-            // Delete temporary files
-            $this->io->section('Cleanup');
+            // Lösche temporäre Dateien
+            $this->io->section('Räume auf');
 
-            // Delete local dump file
+            // Lösche lokale Dump-Datei
             if (file_exists($tempFile)) {
                 unlink($tempFile);
             }
 
-            // Delete remote dump file
+            // Lösche Remote Dump-Datei
             $deleteCommand = sprintf(
                 '%s "rm %s"',
                 $sshCommand,
@@ -204,7 +204,7 @@ HELP
             $process = Process::fromShellCommandline($deleteCommand);
             $process->run();
 
-            $this->io->success('Database successfully synchronized!');
+            $this->io->success('Datenbank wurde erfolgreich synchronisiert!');
             return Command::SUCCESS;
 
         } catch (\Exception $e) {
