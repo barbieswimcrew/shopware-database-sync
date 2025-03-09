@@ -107,8 +107,8 @@ HELP
         }
 
         try {
-            // Create SSH connection and execute pwd
-            $this->io->section('Testing SSH Connection');
+            // Create SSH connection and execute dump
+            $this->io->section('Creating Database Dump on Remote Server');
 
             $sshCommand = sprintf(
                 'ssh -p %d %s@%s',
@@ -117,8 +117,12 @@ HELP
                 $options['host']
             );
 
-            // Execute pwd command
-            $command = sprintf('%s "pwd"', $sshCommand);
+            // Change directory and execute database:dump
+            $command = sprintf(
+                '%s "cd %s && bin/console database:dump --path-only"',
+                $sshCommand,
+                $options['remote_path']
+            );
 
             $process = Process::fromShellCommandline($command);
             $process->setTimeout(30);
@@ -126,12 +130,13 @@ HELP
 
             if (!$process->isSuccessful()) {
                 throw new \RuntimeException(sprintf(
-                    'Error connecting to remote server: %s',
+                    'Error creating dump: %s',
                     $process->getErrorOutput()
                 ));
             }
 
-            $this->io->success(sprintf('Current remote directory: %s', trim($process->getOutput())));
+            $remoteDumpPath = trim($process->getOutput());
+            $this->io->success(sprintf('Database dump created: %s', $remoteDumpPath));
             return Command::SUCCESS;
 
         } catch (\Exception $e) {
