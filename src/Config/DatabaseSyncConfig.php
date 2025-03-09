@@ -30,7 +30,7 @@ class DatabaseSyncConfig
             'user' => $this->getEnvOrNull('DATABASE_SYNC_STAGING_USER'),
             'port' => (int) ($this->getEnvOrNull('DATABASE_SYNC_STAGING_PORT') ?? 22),
             'remote_path' => $this->getEnvOrNull('DATABASE_SYNC_STAGING_PATH'),
-            'password' => $this->getEnvOrNull('DATABASE_SYNC_STAGING_PASSWORD'),
+            'key' => $this->getEnvOrNull('DATABASE_SYNC_STAGING_KEY'),
         ];
     }
 
