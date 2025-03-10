@@ -119,7 +119,7 @@ HELP
 
             // Change directory and execute database:dump
             $command = sprintf(
-                '%s "cd %s && bin/console database:dump --path-only"',
+                '%s "cd %s && . ~/.profile && php bin/console database:dump --path-only"',
                 $sshCommand,
                 $options['remote_path']
             );
