@@ -5,7 +5,10 @@ This plugin enables synchronization of database dumps from a remote server to yo
 ## Installation
 
 ```bash
-composer require barbieswimcrew/database-sync
+composer require barbieswimcrew/shopware-database-sync
+```
+
+```bash
 bin/console plugin:refresh
 bin/console plugin:install --activate BarbieswimcrewDatabaseSync
 ```
