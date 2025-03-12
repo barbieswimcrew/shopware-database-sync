@@ -1,0 +1,9 @@
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    Barbieswimcrew\DatabaseSync\:
+        resource: "../../*"
+        exclude:
+            - "../../{DependencyInjection,Resources}"
